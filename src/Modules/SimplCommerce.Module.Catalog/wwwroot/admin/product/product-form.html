@@ -435,7 +435,21 @@
                         </tr>
                     </table>
                 </uib-tab>
-                <uib-tab index="6" heading="{{::vm.translate.get('SEO')}}">
+                <uib-tab index="6" heading="{{::vm.translate.get('Related Pages')}}">
+                    <page-selection-directive model-id="pageRelationSelector" title="Add related pages" is-visible-individually="true" selected-pages="vm.product.relatedPages"></page-selection-directive>
+                    <p><button type="button" class="btn btn-default" data-toggle="modal" data-target="#pageRelationSelector">{{::vm.translate.get('Manage Related Pages')}}</button></p>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>{{::vm.translate.get('Name')}}</th> 
+                            <th class="text-center">{{::vm.translate.get('Is Published')}}</th>
+                        </tr>
+                        <tr ng-repeat="page in vm.product.relatedPages">
+                            <td>{{page.name}}</td>
+                            <td class="text-center"><i ng-attr-class="{{page.isPublished && 'fa fa-circle' || 'fa fa-circle-o'}}"></i></td>
+                        </tr>
+                    </table>
+                </uib-tab>
+                <uib-tab index="7" heading="{{::vm.translate.get('SEO')}}">
                     <div class="form-group">
                         <label class="col-sm-2 control-label">{{::vm.translate.get('Meta Title')}}</label>
                         <div class="col-sm-10">

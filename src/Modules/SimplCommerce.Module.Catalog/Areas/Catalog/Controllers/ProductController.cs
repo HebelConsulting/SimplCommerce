@@ -83,6 +83,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 .Include(x => x.ProductLinks).ThenInclude(p => p.LinkedProduct).ThenInclude(m => m.ThumbnailImage)
                 .Include(x => x.ThumbnailImage)
                 .Include(x => x.Medias).ThenInclude(m => m.Media)
+                .Include(x => x.Pages).ThenInclude(p => p.Page)
                 .Include(x => x.Brand)
                 .FirstOrDefault(x => x.Id == id && x.IsPublished);
             if (product == null)
@@ -116,6 +117,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
             MapRelatedProductToProductVm(product, model);
             MapProductOptionToProductVm(product, model);
             MapProductImagesToProductVm(product, model);
+            MapProductPagesToProductVm(product, model);
 
             await _mediator.Publish(new EntityViewed { EntityId = product.Id, EntityTypeId = "Product" });
             _productRepository.SaveChanges();
@@ -129,7 +131,20 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
             {
                 Url = _mediaService.GetMediaUrl(productMedia.Media),
                 ThumbnailUrl = _mediaService.GetThumbnailUrl(productMedia.Media)
-            }).ToList();
+            })
+			.ToList();
+        }
+
+        private void MapProductPagesToProductVm(Product product, ProductDetail model)
+        {
+            model.ProductPages = product.Pages.Select(p => new ProductPageVm
+            {
+                Id = p.Id,
+                Name = _contentLocalizationService.GetLocalizedProperty(p.Page, nameof(p.Page.Name), p.Page.Name),
+                IsPublished = p.Page.IsPublished,
+                Body = _contentLocalizationService.GetLocalizedProperty(p.Page, nameof(p.Page.Body), p.Page.Body)
+            })
+			.ToList();
         }
 
         private void MapProductOptionToProductVm(Product product, ProductDetail model)

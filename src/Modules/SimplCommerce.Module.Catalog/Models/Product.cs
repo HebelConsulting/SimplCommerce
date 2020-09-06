@@ -56,6 +56,8 @@ namespace SimplCommerce.Module.Catalog.Models
 
         public IList<ProductMedia> Medias { get; protected set; } = new List<ProductMedia>();
 
+        public IList<ProductPage> Pages { get; protected set; } = new List<ProductPage>();
+
         public IList<ProductLink> ProductLinks { get; protected set; } = new List<ProductLink>();
 
         public IList<ProductLink> LinkedProductLinks { get; protected set; } = new List<ProductLink>();

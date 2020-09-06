@@ -22,6 +22,7 @@
       "wwwroot/admin/product-template/product-template-service.js",
       "wwwroot/admin/product-template/product-template-list.js",
       "wwwroot/admin/product-template/product-template-form.js",
+      "wwwroot/admin/product/page-selection-directive.js",
       "wwwroot/admin/product/product-service.js",
       "wwwroot/admin/product/product-list.js",
       "wwwroot/admin/product/product-option-display-directive.js",

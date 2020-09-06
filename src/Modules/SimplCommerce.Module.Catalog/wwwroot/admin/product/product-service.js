@@ -8,6 +8,7 @@
         var service = {
             quickSearchProducts: quickSearchProducts,
             getProducts: getProducts,
+            getPages: getPages,
             createProduct: createProduct,
             editProduct: editProduct,
             getProductAttrs: getProductAttrs,
@@ -50,6 +51,10 @@
 
         function getProducts(params) {
             return $http.post('api/products/grid', params);
+        }
+
+        function getPages(params) {
+            return $http.post('api/products/pages-grid', params);
         }
 
         function createProduct(product, thumbnailImage, productImages, productDocuments) {

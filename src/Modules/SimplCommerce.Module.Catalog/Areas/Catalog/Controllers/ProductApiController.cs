@@ -15,6 +15,7 @@ using SimplCommerce.Infrastructure.Web.SmartTable;
 using SimplCommerce.Module.Catalog.Areas.Catalog.ViewModels;
 using SimplCommerce.Module.Catalog.Models;
 using SimplCommerce.Module.Catalog.Services;
+using SimplCommerce.Module.Cms.Models;
 using SimplCommerce.Module.Core.Extensions;
 using SimplCommerce.Module.Core.Models;
 using SimplCommerce.Module.Core.Services;
@@ -30,6 +31,8 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
         private readonly IRepository<ProductAttributeValue> _productAttributeValueRepository;
         private readonly IRepository<ProductCategory> _productCategoryRepository;
         private readonly IRepository<ProductLink> _productLinkRepository;
+        private readonly IRepository<ProductPage> _productPageRepository;
+        private readonly IRepository<Page> _pageRepository;
         private readonly IRepository<ProductOptionValue> _productOptionValueRepository;
         private readonly IRepository<Product> _productRepository;
         private readonly IProductService _productService;
@@ -41,6 +44,8 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
             IMediaService mediaService,
             IProductService productService,
             IRepository<ProductLink> productLinkRepository,
+            IRepository<ProductPage> productPageRepository,
+            IRepository<Page> pageRepository,
             IRepository<ProductCategory> productCategoryRepository,
             IRepository<ProductOptionValue> productOptionValueRepository,
             IRepository<ProductAttributeValue> productAttributeValueRepository,
@@ -51,6 +56,8 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
             _mediaService = mediaService;
             _productService = productService;
             _productLinkRepository = productLinkRepository;
+            _productPageRepository = productPageRepository;
+            _pageRepository = pageRepository;
             _productCategoryRepository = productCategoryRepository;
             _productOptionValueRepository = productOptionValueRepository;
             _productAttributeValueRepository = productAttributeValueRepository;
@@ -66,7 +73,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
 
             if (!string.IsNullOrWhiteSpace(name))
             {
-                query = query.Where(x => x.Name.Contains(name));
+                query = query.Where(x => x.Name.ToLower().Contains(name.ToLower()));
             }
 
             var products = await query.Take(5).Select(x => new
@@ -85,6 +92,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 .Include(x => x.ThumbnailImage)
                 .Include(x => x.Medias).ThenInclude(m => m.Media)
                 .Include(x => x.ProductLinks).ThenInclude(p => p.LinkedProduct).ThenInclude(m => m.ThumbnailImage)
+                .Include(x => x.Pages).ThenInclude(p => p.Page)
                 .Include(x => x.OptionValues).ThenInclude(o => o.Option)
                 .Include(x => x.AttributeValues).ThenInclude(a => a.Attribute).ThenInclude(g => g.Group)
                 .Include(x => x.Categories)
@@ -197,6 +205,16 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 });
             }
 
+            foreach (var productPage in product.Pages)
+            {
+                productVm.RelatedPages.Add(new ProductPageVm
+                {
+                    Id = productPage.PageId,
+                    IsPublished = productPage.Page.IsPublished,
+                    Name = productPage.Page.Name
+                });
+            }
+
             productVm.Attributes = product.AttributeValues.Select(x => new ProductAttributeVm
             {
                 AttributeValueId = x.Id,
@@ -225,7 +243,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 if (search.Name != null)
                 {
                     string name = search.Name;
-                    query = query.Where(x => x.Name.Contains(name));
+                    query = query.Where(x => x.Name.ToLower().Contains(name.ToLower()));
                 }
 
                 if (search.HasOptions != null)
@@ -274,6 +292,56 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                     IsAllowToOrder = x.IsAllowToOrder,
                     IsCallForPricing = x.IsCallForPricing,
                     StockQuantity = x.StockQuantity,
+                    CreatedOn = x.CreatedOn,
+                    IsPublished = x.IsPublished
+                });
+
+            return Json(gridData);
+        }
+
+        [HttpPost("pages-grid")]
+        public async Task<IActionResult> PagesList([FromBody] SmartTableParam param)
+        {
+            var query = _pageRepository.Query().Where(x => !x.IsDeleted);
+
+            if (param.Search.PredicateObject != null)
+            {
+                dynamic search = param.Search.PredicateObject;
+                if (search.Name != null)
+                {
+                    string name = search.Name;
+                    query = query.Where(x => x.Name.ToLower().Contains(name.ToLower()));
+                }
+
+                if (search.IsPublished != null)
+                {
+                    bool isPublished = search.IsPublished;
+                    query = query.Where(x => x.IsPublished == isPublished);
+                }
+
+                if (search.CreatedOn != null)
+                {
+                    if (search.CreatedOn.before != null)
+                    {
+                        DateTimeOffset before = search.CreatedOn.before;
+                        query = query.Where(x => x.CreatedOn <= before);
+                    }
+
+                    if (search.CreatedOn.after != null)
+                    {
+                        DateTimeOffset after = search.CreatedOn.after;
+                        query = query.Where(x => x.CreatedOn >= after);
+                    }
+                }
+            }
+
+            var gridData = query.ToSmartTableResult(
+                param,
+                x => new PageListItem
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Slug = x.Slug,
                     CreatedOn = x.CreatedOn,
                     IsPublished = x.IsPublished
                 });
@@ -388,6 +456,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 .Include(x => x.ThumbnailImage)
                 .Include(x => x.Medias).ThenInclude(m => m.Media)
                 .Include(x => x.ProductLinks).ThenInclude(x => x.LinkedProduct).ThenInclude(p => p.ThumbnailImage)
+                .Include(x => x.Pages).ThenInclude(p => p.Page)
                 .Include(x => x.OptionValues).ThenInclude(o => o.Option)
                 .Include(x => x.AttributeValues).ThenInclude(a => a.Attribute).ThenInclude(g => g.Group)
                 .Include(x => x.Categories)
@@ -459,6 +528,7 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
             AddOrDeleteCategories(model, product);
             await AddOrDeleteProductVariation(currentUser, model, product);
             AddOrDeleteProductLinks(model, product);
+            AddOrDeleteProductPages(model, product);
 
             _productService.Update(product);
 
@@ -830,6 +900,33 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.Controllers
                 if (model.Product.CrossSellProducts.All(x => x.Id != productLink.LinkedProductId))
                 {
                     _productLinkRepository.Remove(productLink);
+                }
+            }
+        }
+
+        // Due to some issue with EF Core, we have to use _productPageRepository in this case.
+        private void AddOrDeleteProductPages(ProductForm model, Product product)
+        {
+            foreach (var productPageVm in model.Product.RelatedPages)
+            {
+                var productPage = product.Pages.FirstOrDefault(x => x.Page.Id == productPageVm.Id);
+                if (productPage == null)
+                {
+                    productPage = new ProductPage
+                    {
+                        Product = product,
+                        PageId = productPageVm.Id,
+                    };
+
+                    _productPageRepository.Add(productPage);
+                }
+            }
+
+            foreach (var productPage in product.Pages)
+            {
+                if (model.Product.RelatedPages.All(x => x.Id != productPage.PageId))
+                {
+                    _productPageRepository.Remove(productPage);
                 }
             }
         }

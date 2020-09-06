@@ -15,13 +15,21 @@ namespace SimplCommerce.Module.Catalog.Data
                 .WithMany(p => p.ProductLinks)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<ProductLink>()
                 .HasOne(x => x.LinkedProduct)
                 .WithMany(p => p.LinkedProductLinks)
                 .HasForeignKey(x => x.LinkedProductId)
                 .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<Product>()
+                .HasMany(x => x.Pages)
+                .WithOne(p => p.Product)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ProductPage>()
+                .HasOne(x => x.Product)
+                .WithMany(p => p.Pages)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<ProductTemplateProductAttribute>()
                 .HasKey(t => new { t.ProductTemplateId, t.ProductAttributeId });
             modelBuilder.Entity<ProductTemplateProductAttribute>()

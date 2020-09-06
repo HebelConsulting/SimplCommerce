@@ -75,6 +75,8 @@ namespace SimplCommerce.Module.Catalog.Areas.Catalog.ViewModels
 
         public IList<ProductThumbnail> CrossSellProducts { get; set; } = new List<ProductThumbnail>();
 
+        public IList<ProductPageVm> ProductPages { get; set; } = new List<ProductPageVm>();
+
         public Brand Brand { get; set; }
     }
 }
