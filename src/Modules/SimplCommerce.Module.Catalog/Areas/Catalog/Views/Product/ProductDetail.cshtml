@@ -295,6 +295,14 @@
 
 @await Component.InvokeAsync("ProductRecentlyViewed", new { productId = Model.Id })
 
+@foreach (var productPage in Model.ProductPages)
+{
+    <div  class="product-detail">
+        <h2 class="page-header">@productPage.Name</h3>
+        @Html.Raw(productPage.Body)
+    </div>
+}
+
 <div>
     <h3>@Localizer["Customer reviews"]</h3>
     @await Component.InvokeAsync("Review", new { entityId = Model.Id, entityTypeId = "Product" })
